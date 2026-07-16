@@ -21,6 +21,7 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - run: npx nuxt prepare
       - run: pnpm lint
 
   typecheck:
@@ -36,6 +37,7 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - run: npx nuxt prepare
       - run: pnpm typecheck
 
   test:
@@ -51,6 +53,7 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - run: npx nuxt prepare
       - run: pnpm test --run
 
   build:
@@ -67,4 +70,5 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - run: npx nuxt prepare
       - run: pnpm build
