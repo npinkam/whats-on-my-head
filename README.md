@@ -1,6 +1,6 @@
 # SkyRadar: What's on My Head?
 
-Real-time satellite visualizer. Tracks overhead satellites using TLE data from [CelesTrak](https://celestrak.org), propagated via [Skyfield](https://github.com/skyfielders/python-skyfield), and streamed to a browser-based Leaflet map at 1Hz over WebSockets.
+Real-time satellite visualizer for **stations, weather, NOAA, GOES, and Earth resource** satellites. Tracks overhead objects using TLE data from [CelesTrak](https://celestrak.org), propagated via [Skyfield](https://github.com/skyfielders/python-skyfield), and streamed to a browser-based Leaflet map at 1Hz over WebSockets.
 
 **Data pipeline:** CelesTrak → Redis distributed lock → Background sync worker → PostgreSQL (upsert) + Redis cache → WebSocket stream (1Hz) → Client browser.
 

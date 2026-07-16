@@ -2,6 +2,9 @@
 # Pre-commit hook: run full test suite before allowing commits.
 # Skip with: git commit --no-verify
 
+PATH="$HOME/.local/bin:$HOME/.local/share/pnpm/bin:$PATH"
+export PATH
+
 echo "=== Pre-commit checks ==="
 
 echo "--- Backend lint ---"
