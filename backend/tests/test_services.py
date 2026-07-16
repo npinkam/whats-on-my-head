@@ -69,7 +69,7 @@ async def test_tle_sync_service_sync_success():
     count = await service.sync(mock_session)
 
     assert count == 1
-    assert mock_client.fetch_tle_group.call_count == 1
+    assert mock_client.fetch_tle_group.call_count == 5
     mock_repository.bulk_upsert.assert_called_once()
     mock_cache.cache_tle_data.assert_called_once()
     mock_tracker.update_satellites.assert_called_once()

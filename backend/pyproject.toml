@@ -37,9 +37,11 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "A", "SIM"]
 
-[tool.ty]
+[tool.ty.environment]
 python-version = "3.12"
-strict = true
+
+[tool.ty.src]
+include = ["src"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

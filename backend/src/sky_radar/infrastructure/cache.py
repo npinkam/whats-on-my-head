@@ -23,7 +23,7 @@ class RedisCache:
 
     async def disconnect(self):
         if self.client:
-            await self.client.aclose()
+            await self.client.close()
             logger.info("Redis connection closed")
 
     async def acquire_lock(self) -> bool:

@@ -1,13 +1,31 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { useWebSocket } from '../composables/useWebSocket'
 
+interface MockWebSocketInstance {
+  readyState: number
+  onopen: (() => void) | null
+  onmessage: ((event: { data: string }) => void) | null
+  onclose: (() => void) | null
+  onerror: ((event: Event) => void) | null
+  send: ReturnType<typeof vi.fn>
+  close: ReturnType<typeof vi.fn>
+}
+
+interface MockWebSocketClass {
+  new (...args: string[]): MockWebSocketInstance
+  CONNECTING: number
+  OPEN: number
+  CLOSING: number
+  CLOSED: number
+}
+
 describe('useWebSocket', () => {
-  let wsInstances: any[]
+  let wsInstances: MockWebSocketInstance[]
 
   beforeEach(() => {
     wsInstances = []
 
-    const MockWebSocket = vi.fn(function (this: any) {
+    const MockWebSocket = vi.fn(function (this: MockWebSocketInstance) {
       this.readyState = 1
       this.onopen = null
       this.onmessage = null
@@ -16,7 +34,7 @@ describe('useWebSocket', () => {
       this.send = vi.fn()
       this.close = vi.fn()
       wsInstances.push(this)
-    }) as any
+    }) as unknown as MockWebSocketClass
     MockWebSocket.CONNECTING = 0
     MockWebSocket.OPEN = 1
     MockWebSocket.CLOSING = 2
@@ -35,7 +53,7 @@ describe('useWebSocket', () => {
     const { connect } = useWebSocket()
     connect()
 
-    const MockWebSocket = vi.mocked(globalThis.WebSocket as any)
+    const MockWebSocket = vi.mocked(globalThis.WebSocket as unknown as MockWebSocketClass)
     expect(MockWebSocket).toHaveBeenCalledTimes(1)
     const url = MockWebSocket.mock.calls[0][0] as string
     expect(url).toMatch(/^ws:\/\/localhost:8000\/ws\/client-/)
@@ -45,7 +63,7 @@ describe('useWebSocket', () => {
     const { connect, connected } = useWebSocket()
     connect()
 
-    wsInstances[0].onopen()
+    wsInstances[0].onopen!()
     expect(connected.value).toBe(true)
   })
 
@@ -69,7 +87,7 @@ describe('useWebSocket', () => {
       ],
     }
 
-    wsInstances[0].onmessage({ data: JSON.stringify(message) })
+    wsInstances[0].onmessage!({ data: JSON.stringify(message) })
     expect(satellites.value).toEqual(message.satellites)
   })
 
@@ -78,7 +96,7 @@ describe('useWebSocket', () => {
     const { connect } = useWebSocket()
     connect()
 
-    wsInstances[0].onmessage({ data: 'invalid json{' })
+    wsInstances[0].onmessage!({ data: 'invalid json{' })
     expect(consoleSpy).toHaveBeenCalled()
     consoleSpy.mockRestore()
   })
@@ -97,10 +115,10 @@ describe('useWebSocket', () => {
     const { connect, connected } = useWebSocket()
     connect()
 
-    wsInstances[0].onopen()
+    wsInstances[0].onopen!()
     expect(connected.value).toBe(true)
 
-    wsInstances[0].onclose()
+    wsInstances[0].onclose!()
     expect(connected.value).toBe(false)
   })
 

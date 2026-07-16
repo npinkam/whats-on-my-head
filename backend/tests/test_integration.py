@@ -136,6 +136,8 @@ async def test_broadcast_with_real_redis(redis_container, sample_tle_response):
     mock_client.fetch_tle_group = AsyncMock(return_value=sample_tle_response)
 
     mock_repo = AsyncMock()
+    mock_repo.has_fresh_data = AsyncMock(return_value=False)
+    mock_repo.bulk_upsert = AsyncMock()
     tle_sync = TLESyncService(mock_client, cache, mock_repo, tracker)
     await tle_sync.sync(AsyncMock())
 

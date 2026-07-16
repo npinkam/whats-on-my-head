@@ -14,6 +14,17 @@ Real-time satellite visualizer. Tracks overhead satellites using TLE data from [
 | Frontend | Nuxt 3, Vue 3.5+, Leaflet.js, Tailwind CSS |
 | Tooling | uv, Ruff, ty, pnpm, ESLint, Vitest |
 
+## AI Stack
+
+This project was built with AI-assisted development tools:
+
+| Tool | Purpose |
+|------|---------|
+| [OpenCode](https://opencode.ai) | AI coding agent in the terminal |
+| [OpenRouter](https://openrouter.ai) | Unified API for multiple LLM providers |
+| DeepSeek V4 Flash | Primary model for code generation |
+| Qwen | Secondary model for reasoning and planning |
+
 ## Architecture
 
 ```

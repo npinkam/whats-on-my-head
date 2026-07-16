@@ -54,7 +54,7 @@ lint-frontend: ## Run frontend linter only
 # ─── Type Checking ───────────────────────────────────────────────────────────
 
 typecheck: ## Run all type checkers
-	cd backend && uv run ty src/
+	cd backend && uv run ty check src/
 	cd frontend && pnpm typecheck
 
 # ─── Formatting ──────────────────────────────────────────────────────────────
@@ -83,6 +83,9 @@ full-stack-down: ## Stop full stack
 	docker compose -f docker/docker-compose.full.yml down
 
 # ─── Utility ─────────────────────────────────────────────────────────────────
+
+precommit-setup: ## Configure git to use .githooks/pre-commit
+	git config core.hooksPath .githooks
 
 clean: ## Clean build artifacts and caches
 	find . -type d -name "__pycache__" -exec rm -rf {} +

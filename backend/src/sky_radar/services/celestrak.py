@@ -35,6 +35,8 @@ class CelesTrakClient:
                 else:
                     logger.error(f"Request failed after {self.max_retries} attempts: {e}")
 
+        if last_exception is None:
+            raise RuntimeError("Unexpected: retry loop exited without exception")
         raise last_exception
 
     async def fetch_tle_group(self, group: str) -> list[tuple[str, str, str]]:

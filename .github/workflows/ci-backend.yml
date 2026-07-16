@@ -1,0 +1,53 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --all-extras
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --all-extras
+      - run: uv run ty check src/
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: docker/login-action@v3
+        with:
+          registry: docker.io
+      - run: uv sync --all-extras
+      - run: uv run pytest --cov=src --cov-report=xml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml

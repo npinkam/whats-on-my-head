@@ -5,8 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from sky_radar.api.exceptions import CacheError, TLEFetchError
 from sky_radar.api.health import router as health_router
@@ -37,7 +36,9 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
+        engine, expire_on_commit=False
+    )
 
     manager = ConnectionManager()
     repository = SatelliteRepository()

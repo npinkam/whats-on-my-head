@@ -1,0 +1,55 @@
+#!/bin/sh
+# Pre-commit hook: run full test suite before allowing commits.
+# Skip with: git commit --no-verify
+
+echo "=== Pre-commit checks ==="
+
+echo "--- Backend lint ---"
+cd backend && uv run ruff check . && uv run ruff format --check .
+if [ $? -ne 0 ]; then
+    echo "FAILED: backend lint"
+    exit 1
+fi
+cd ..
+
+echo "--- Backend typecheck ---"
+cd backend && uv run ty check src/
+if [ $? -ne 0 ]; then
+    echo "FAILED: backend typecheck"
+    exit 1
+fi
+cd ..
+
+echo "--- Backend tests ---"
+cd backend && uv run pytest
+if [ $? -ne 0 ]; then
+    echo "FAILED: backend tests"
+    exit 1
+fi
+cd ..
+
+echo "--- Frontend lint ---"
+cd frontend && pnpm lint
+if [ $? -ne 0 ]; then
+    echo "FAILED: frontend lint"
+    exit 1
+fi
+cd ..
+
+echo "--- Frontend typecheck ---"
+cd frontend && pnpm typecheck
+if [ $? -ne 0 ]; then
+    echo "FAILED: frontend typecheck"
+    exit 1
+fi
+cd ..
+
+echo "--- Frontend tests ---"
+cd frontend && pnpm test --run
+if [ $? -ne 0 ]; then
+    echo "FAILED: frontend tests"
+    exit 1
+fi
+cd ..
+
+echo "=== All checks passed ==="

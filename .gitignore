@@ -36,6 +36,7 @@ node_modules/
 .coverage
 htmlcov/
 *.cover
+coverage.xml
 
 # Mypy
 .mypy_cache/
