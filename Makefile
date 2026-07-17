@@ -30,8 +30,8 @@ dev-stop: ## Stop all dev services
 # ─── Testing ─────────────────────────────────────────────────────────────────
 
 test: ## Run all tests (backend + frontend)
-	cd backend && uv run pytest
-	cd frontend && pnpm test
+	cd backend && PATH="$$HOME/.local/bin:$$PATH" uv run pytest
+	cd frontend && PATH="$$HOME/.local/share/pnpm/bin:$$HOME/.local/bin:$$PATH" pnpm vitest run
 
 test-backend: ## Run backend tests only
 	cd backend && uv run pytest
