@@ -1,3 +1,4 @@
+import logging
 import sys
 
 from loguru import logger
@@ -5,8 +6,16 @@ from loguru import logger
 from sky_radar.config import settings
 
 
+class HealthCheckFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        return "/health" not in msg and "/ready" not in msg
+
+
 def setup_logging():
     logger.remove()
+
+    logging.getLogger("uvicorn.access").addFilter(HealthCheckFilter())
 
     log_format = settings.log_format if hasattr(settings, "log_format") else "text"
 

@@ -51,6 +51,7 @@ onMounted(() => {
   })
 
   map.on('click', () => {
+    map!.closePopup()
     if (activeTrail) {
       map!.removeLayer(activeTrail)
       activeTrail = null
@@ -99,6 +100,12 @@ watch(
         marker.on('click', async (e) => {
           L.DomEvent.stopPropagation(e)
           await loadTrajectory(sat.name)
+        })
+        marker.on('popupclose', () => {
+          if (activeTrail) {
+            map!.removeLayer(activeTrail)
+            activeTrail = null
+          }
         })
         markers.addLayer(marker)
         markerMap.set(sat.name, marker)
