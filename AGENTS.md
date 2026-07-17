@@ -7,7 +7,7 @@
 make infra             # Start PostgreSQL and Redis
 make backend           # Start backend dev server
 make frontend          # Start frontend dev server
-make test              # Run all tests
+make test              # Run all tests (gate — run before calling done)
 make lint              # Run all linters
 make format            # Format code
 make migrate           # Apply database migrations
@@ -85,4 +85,4 @@ Docker stacks in `docker/`:
 
 ## Verification Order
 
-`make validate` — Hard gate. Run this before calling any implementation done.
+`make test` — Hard gate. Run this before calling any implementation done.

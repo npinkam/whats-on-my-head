@@ -1,4 +1,4 @@
-.PHONY: help infra infra-down backend frontend dev dev-stop test test-backend test-frontend validate lint lint-backend lint-frontend typecheck format migrate migrate-create migrate-down clean
+.PHONY: help infra infra-down backend frontend dev dev-stop test test-backend test-frontend lint lint-backend lint-frontend typecheck format migrate migrate-create migrate-down clean
 
 # ─── Help ────────────────────────────────────────────────────────────────────
 
@@ -29,7 +29,7 @@ dev-stop: ## Stop all dev services
 
 # ─── Testing ─────────────────────────────────────────────────────────────────
 
-test: ## Run all tests (backend + frontend)
+test: ## Run all unit tests (backend + frontend) — gate before calling done
 	cd backend && PATH="$$HOME/.local/bin:$$PATH" uv run pytest
 	cd frontend && PATH="$$HOME/.local/share/pnpm/bin:$$HOME/.local/bin:$$PATH" pnpm vitest run
 
@@ -37,10 +37,7 @@ test-backend: ## Run backend tests only
 	cd backend && uv run pytest
 
 test-frontend: ## Run frontend tests only
-	cd frontend && pnpm test
-
-validate: ## Run all unit tests (backend + frontend) — gate before calling done
-	$(MAKE) test
+	cd frontend && PATH="$$HOME/.local/share/pnpm/bin:$$HOME/.local/bin:$$PATH" pnpm vitest run
 
 # ─── Linting ─────────────────────────────────────────────────────────────────
 
