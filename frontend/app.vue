@@ -43,6 +43,9 @@ const onMapMove = (center: { lat: number; lng: number }) => {
 
 onMounted(() => {
   connect()
-  sendLocation(mapCenter.value.lat, mapCenter.value.lng)
+})
+
+watch(connected, (val) => {
+  if (val) sendLocation(mapCenter.value.lat, mapCenter.value.lng)
 })
 </script>
