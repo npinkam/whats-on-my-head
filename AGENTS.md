@@ -13,6 +13,7 @@ make format            # Format code
 make migrate           # Apply database migrations
 make migrate-create MSG="description"  # Create new migration
 make help              # Show all available commands
+make validate           # Hard gate: run all unit tests before calling done
 
 # Backend (from backend/)
 uv sync                          # Install deps
@@ -84,4 +85,4 @@ Docker stacks in `docker/`:
 
 ## Verification Order
 
-`ruff check .` → `ruff format --check .` → `ty src/` → `pytest`
+`make validate` — Hard gate. Run this before calling any implementation done.

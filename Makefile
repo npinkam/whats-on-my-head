@@ -1,4 +1,4 @@
-.PHONY: help infra infra-down backend frontend dev dev-stop test lint typecheck format migrate migrate-create clean
+.PHONY: help infra infra-down backend frontend dev dev-stop test test-backend test-frontend validate lint lint-backend lint-frontend typecheck format migrate migrate-create migrate-down clean
 
 # ─── Help ────────────────────────────────────────────────────────────────────
 
@@ -38,6 +38,9 @@ test-backend: ## Run backend tests only
 
 test-frontend: ## Run frontend tests only
 	cd frontend && pnpm test
+
+validate: ## Run all unit tests (backend + frontend) — gate before calling done
+	$(MAKE) test
 
 # ─── Linting ─────────────────────────────────────────────────────────────────
 
