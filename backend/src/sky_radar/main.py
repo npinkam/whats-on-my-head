@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from sky_radar.api.exceptions import CacheError, TLEFetchError
 from sky_radar.api.health import router as health_router
+from sky_radar.api.trajectory import router as trajectory_router
 from sky_radar.api.websocket import router as websocket_router
 from sky_radar.config import settings
 from sky_radar.infrastructure.cache import RedisCache
@@ -116,3 +117,4 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(websocket_router)
+app.include_router(trajectory_router)

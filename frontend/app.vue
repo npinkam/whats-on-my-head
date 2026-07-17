@@ -1,85 +1,48 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
-    <div class="container mx-auto px-4 py-8">
-      <header class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">SkyRadar</h1>
-        <p class="text-gray-600">Real-time satellite tracking</p>
-      </header>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-<div class="lg:col-span-2">
-            <div class="bg-white rounded-lg shadow p-6">
-              <div class="h-96">
-                <ClientOnly>
-                  <SatelliteMap :satellites="satellites" :center="[latitude, longitude]" />
-                </ClientOnly>
-              </div>
-            </div>
-          </div>
-
-        <div class="space-y-6">
-          <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Location</h2>
-            <form @submit.prevent="updateLocation" class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Latitude</label>
-                <input
-                  v-model="latitude"
-                  type="number"
-                  step="0.0001"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="40.7128"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Longitude</label>
-                <input
-                  v-model="longitude"
-                  type="number"
-                  step="0.0001"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="-74.0060"
-                />
-              </div>
-              <button
-                type="submit"
-                class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                Update Location
-              </button>
-            </form>
-          </div>
-
-          <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Connection</h2>
-            <div class="flex items-center space-x-2">
-              <div class="w-3 h-3 rounded-full" :class="connected ? 'bg-green-500' : 'bg-red-500'"></div>
-              <span class="text-sm text-gray-600">{{ connected ? 'Connected' : 'Disconnected' }}</span>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Satellites</h2>
-            <p class="text-sm text-gray-600">Overhead: {{ satellites.length }}</p>
-          </div>
-        </div>
+  <div class="h-screen flex flex-col bg-gray-100 overflow-hidden">
+    <header class="h-14 bg-slate-900 flex items-center gap-2 px-4 shadow-lg z-50 flex-shrink-0">
+      <span class="text-2xl">🛰️</span>
+      <div>
+        <h1 class="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent leading-tight">
+          What's On My Head
+        </h1>
+        <p class="text-xs text-slate-400 -mt-0.5">real-time satellite tracker</p>
       </div>
-    </div>
+      <div class="ml-4 px-2 py-0.5 bg-slate-800 rounded text-xs text-slate-300">
+        {{ satellites.length }} overhead
+      </div>
+      <div
+class="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+           :class="connected ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'">
+        <div
+class="w-2 h-2 rounded-full"
+             :class="connected ? 'bg-emerald-400' : 'bg-red-400'" />
+        <span class="text-xs font-medium">{{ connected ? 'Live' : 'Offline' }}</span>
+      </div>
+    </header>
+    <main class="flex-1 relative">
+      <ClientOnly>
+        <SatelliteMap :satellites="satellites" :center="[mapCenter.lat, mapCenter.lng]" @map-move="onMapMove" />
+      </ClientOnly>
+      <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur rounded-lg px-3 py-2 shadow z-[1000]">
+        <span class="text-sm font-mono">{{ mapCenter.lat.toFixed(4) }}°, {{ mapCenter.lng.toFixed(4) }}°</span>
+      </div>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-const latitude = ref(40.7128)
-const longitude = ref(-74.0060)
-
 const { connected, satellites, connect, sendLocation } = useWebSocket()
 
-const updateLocation = () => {
-  sendLocation(latitude.value, longitude.value)
+const mapCenter = ref({ lat: 40.7128, lng: -74.0060 })
+
+const onMapMove = (center: { lat: number; lng: number }) => {
+  mapCenter.value = center
+  sendLocation(center.lat, center.lng)
 }
 
 onMounted(() => {
   connect()
-  sendLocation(latitude.value, longitude.value)
+  sendLocation(mapCenter.value.lat, mapCenter.value.lng)
 })
 </script>

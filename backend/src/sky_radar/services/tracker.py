@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from loguru import logger
 from skyfield.api import EarthSatellite, load, wgs84
@@ -54,6 +54,34 @@ class SatelliteTracker:
             "range_km": distance.km,
             "is_visible": bool(alt.degrees > 0),
         }
+
+    def calculate_trajectory(
+        self,
+        tle_line1: str,
+        tle_line2: str,
+        steps: int = 100,
+    ) -> list[dict]:
+        satellite = EarthSatellite(tle_line1, tle_line2, "", self.ts)
+
+        mean_motion = float(tle_line2[52:63].strip())
+        period = timedelta(minutes=1440.0 / mean_motion)
+        half = period / 2
+
+        now = datetime.now(tz=UTC)
+
+        positions = []
+        for i in range(steps):
+            dt = now - half + (period * i / (steps - 1))
+            t = self.ts.from_datetime(dt)
+            subpoint = wgs84.subpoint_of(satellite.at(t))
+            positions.append(
+                {
+                    "latitude": round(subpoint.latitude.degrees, 4),
+                    "longitude": round(subpoint.longitude.degrees, 4),
+                }
+            )
+
+        return positions
 
     def calculate_positions_batch(
         self,
