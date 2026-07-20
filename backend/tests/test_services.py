@@ -53,6 +53,22 @@ def test_celestrak_parse_tle_malformed():
     assert result == []
 
 
+def test_celestrak_parse_tle_duplicate_names():
+    text = """DEBRIS
+1 70001U 25999A   24001.50000000  .00016717  00000-0  10270-3 0  9993
+2 70001  51.6416 208.9163 0006703  40.5765 159.9227 15.72125391999999
+DEBRIS
+1 70002U 25999B   24001.50000000  .00000095  00000-0  65573-4 0  9998
+2 70002  99.1903  33.8564 0013894 101.2758 258.9399 14.12508495776476
+"""
+    client = CelesTrakClient()
+    result = client._parse_tle(text)
+
+    assert len(result) == 2
+    assert result[0][0] == "DEBRIS"
+    assert result[1][0] == "DEBRIS"
+
+
 async def test_fetch_active_artifact_fallback_to_artifact(monkeypatch, tmp_path):
     artifact = tmp_path / "celestrak_active.txt"
     artifact.write_text(SAMPLE_TLE_TEXT)
@@ -206,6 +222,7 @@ async def test_tle_sync_service_skips_fetch_if_fresh():
     mock_repository.get_all_serialized = AsyncMock(
         return_value=[
             {
+                "norad_cat_id": 25544,
                 "name": "ISS (ZARYA)",
                 "tle_line1": "1 25544U 98067A   24001.50000000  .00016717  00000-0  10270-3 0  9993",  # noqa: E501
                 "tle_line2": "2 25544  51.6416 208.9163 0006703  40.5765 159.9227 15.72125391999999",  # noqa: E501
@@ -227,6 +244,33 @@ async def test_tle_sync_service_skips_fetch_if_fresh():
     mock_client.fetch_active_artifact.assert_not_called()
     mock_cache.cache_tle_data.assert_called_once()
     mock_tracker.update_satellites.assert_called_once()
+
+
+async def test_tle_sync_service_dedup_duplicate_names():
+    mock_client = AsyncMock(spec=CelesTrakClient)
+    mock_client.fetch_active_artifact = AsyncMock(return_value=TLE_SAMPLE + [TLE_SAMPLE[0]])
+
+    mock_cache = AsyncMock()
+    mock_cache.acquire_lock = AsyncMock(return_value=True)
+    mock_cache.release_lock = AsyncMock()
+    mock_cache.cache_tle_data = AsyncMock()
+
+    mock_repository = AsyncMock()
+    mock_repository.has_fresh_data = AsyncMock(return_value=False)
+    mock_repository.bulk_upsert = AsyncMock()
+
+    mock_tracker = MagicMock()
+    mock_tracker.update_satellites = MagicMock()
+
+    mock_session = AsyncMock()
+
+    service = TLESyncService(mock_client, mock_cache, mock_repository, mock_tracker)
+
+    count = await service.sync(mock_session)
+
+    assert count == 2
+    call_args = mock_repository.bulk_upsert.call_args[0][1]
+    assert len(call_args) == 2
 
 
 def test_broadcaster_service_init():

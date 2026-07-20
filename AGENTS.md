@@ -12,6 +12,8 @@ make lint              # Run all linters
 make format            # Format code
 make migrate           # Apply database migrations
 make migrate-create MSG="description"  # Create new migration
+make migrate-down      # Rollback last migration
+make schema-check      # Verify models are in sync with migrations
 make help              # Show all available commands
 
 # Backend (from backend/)

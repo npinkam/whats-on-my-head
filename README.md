@@ -161,6 +161,7 @@ make format                   # Format all code
 make migrate                  # Apply database migrations
 make migrate-create MSG="desc"  # Create new migration
 make migrate-down              # Rollback last migration
+make schema-check              # Verify models are in sync with migrations
 
 # Docker
 make full-stack               # Start full stack via Docker (--build)

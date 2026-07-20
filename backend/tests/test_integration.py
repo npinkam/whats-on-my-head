@@ -113,6 +113,35 @@ async def test_tle_sync_idempotent(real_cache, real_session, sample_tle_response
     assert result.one()[0] == 2
 
 
+async def test_tle_sync_dedup_duplicate_names(real_cache, real_session):
+    tracker = SatelliteTracker()
+    repository = SatelliteRepository()
+
+    sat1 = (
+        "ISS (ZARYA)",
+        "1 25544U 98067A   24001.50000000  .00016717  00000-0  10270-3 0  9993",
+        "2 25544  51.6416 208.9163 0006703  40.5765 159.9227 15.72125391999999",
+    )  # noqa: E501
+    sat2 = (
+        "NOAA 19",
+        "1 33591U 09005A   24001.50000000  .00000095  00000-0  65573-4 0  9998",
+        "2 33591  99.1903  33.8564 0013894 101.2758 258.9399 14.12508495776476",
+    )  # noqa: E501
+    tle_data = [sat1, sat1, sat2]
+
+    mock_client = AsyncMock()
+    mock_client.fetch_active_artifact = AsyncMock(return_value=tle_data)
+
+    tle_sync = TLESyncService(mock_client, real_cache, repository, tracker)
+
+    count = await tle_sync.sync(real_session)
+
+    assert count == 2
+    result = await real_session.execute(text("SELECT COUNT(*) FROM satellites"))
+    assert result.one()[0] == 2
+    assert len(tracker.get_satellite_objects()) == 2
+
+
 async def test_tle_sync_redis_lock(real_cache, real_session, sample_tle_response):
     mock_client = AsyncMock()
     mock_client.fetch_active_artifact = AsyncMock(return_value=sample_tle_response)

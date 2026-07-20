@@ -14,6 +14,7 @@ class SatellitePosition(BaseModel):
 
 
 class SatelliteUpsertData(BaseModel):
+    norad_cat_id: int
     name: str
     tle_line1: str
     tle_line2: str

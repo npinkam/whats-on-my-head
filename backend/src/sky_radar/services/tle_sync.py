@@ -41,6 +41,7 @@ class TLESyncService:
             tles = await self.client.fetch_active_artifact()
             satellites_data = [
                 SatelliteUpsertData(
+                    norad_cat_id=int(line1[2:7]),
                     name=name,
                     tle_line1=line1,
                     tle_line2=line2,
@@ -48,6 +49,10 @@ class TLESyncService:
                 )
                 for name, line1, line2 in tles
             ]
+            seen: dict[int, SatelliteUpsertData] = {}
+            for s in satellites_data:
+                seen[s.norad_cat_id] = s
+            satellites_data = list(seen.values())
 
             if satellites_data:
                 await self.repository.bulk_upsert(session, satellites_data)

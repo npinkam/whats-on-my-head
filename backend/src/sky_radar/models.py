@@ -12,7 +12,8 @@ class Satellite(Base):
     __tablename__ = "satellites"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
+    norad_cat_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
     tle_line1: Mapped[str] = mapped_column(String, nullable=False)
     tle_line2: Mapped[str] = mapped_column(String, nullable=False)
     epoch: Mapped[datetime] = mapped_column(DateTime, nullable=False)

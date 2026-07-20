@@ -25,6 +25,7 @@ class SatelliteRepository:
         satellites = list(result.scalars().all())
         return [
             {
+                "norad_cat_id": s.norad_cat_id,
                 "name": s.name,
                 "tle_line1": s.tle_line1,
                 "tle_line2": s.tle_line2,
@@ -51,8 +52,9 @@ class SatelliteRepository:
             values = [s.model_dump() for s in batch]
             stmt = insert(Satellite).values(values)
             stmt = stmt.on_conflict_do_update(
-                index_elements=["name"],
+                index_elements=["norad_cat_id"],
                 set_={
+                    "name": stmt.excluded.name,
                     "tle_line1": stmt.excluded.tle_line1,
                     "tle_line2": stmt.excluded.tle_line2,
                     "epoch": stmt.excluded.epoch,

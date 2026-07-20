@@ -16,7 +16,8 @@ class SatelliteTracker:
             name = sat["name"] if isinstance(sat, dict) else sat.name
             line1 = sat["tle_line1"] if isinstance(sat, dict) else sat.tle_line1
             line2 = sat["tle_line2"] if isinstance(sat, dict) else sat.tle_line2
-            self._satellite_cache[name] = EarthSatellite(line1, line2, name, self.ts)
+            key = str(sat["norad_cat_id"]) if isinstance(sat, dict) else str(sat.norad_cat_id)
+            self._satellite_cache[key] = EarthSatellite(line1, line2, name, self.ts)
 
     def get_satellite_objects(self) -> list[EarthSatellite]:
         return list(self._satellite_cache.values())
