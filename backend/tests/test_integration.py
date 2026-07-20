@@ -74,7 +74,7 @@ async def test_tle_sync_with_real_redis_and_pg(real_cache, real_session, sample_
     repository = SatelliteRepository()
 
     mock_client = AsyncMock()
-    mock_client.fetch_tle_group = AsyncMock(return_value=sample_tle_response)
+    mock_client.fetch_active_artifact = AsyncMock(return_value=sample_tle_response)
 
     tle_sync = TLESyncService(mock_client, real_cache, repository, tracker)
 
@@ -98,13 +98,14 @@ async def test_tle_sync_idempotent(real_cache, real_session, sample_tle_response
     repository = SatelliteRepository()
 
     mock_client = AsyncMock()
-    mock_client.fetch_tle_group = AsyncMock(return_value=sample_tle_response)
+    mock_client.fetch_active_artifact = AsyncMock(return_value=sample_tle_response)
 
     tle_sync = TLESyncService(mock_client, real_cache, repository, tracker)
 
     count1 = await tle_sync.sync(real_session)
     assert count1 == 2
 
+    # Second call hits fresh data path, no fetch
     count2 = await tle_sync.sync(real_session)
     assert count2 == 2
 
@@ -114,7 +115,7 @@ async def test_tle_sync_idempotent(real_cache, real_session, sample_tle_response
 
 async def test_tle_sync_redis_lock(real_cache, real_session, sample_tle_response):
     mock_client = AsyncMock()
-    mock_client.fetch_tle_group = AsyncMock(return_value=sample_tle_response)
+    mock_client.fetch_active_artifact = AsyncMock(return_value=sample_tle_response)
 
     locked = await real_cache.acquire_lock()
     assert locked is True
@@ -133,7 +134,7 @@ async def test_broadcast_with_real_redis(redis_container, sample_tle_response):
     tracker = SatelliteTracker()
 
     mock_client = AsyncMock()
-    mock_client.fetch_tle_group = AsyncMock(return_value=sample_tle_response)
+    mock_client.fetch_active_artifact = AsyncMock(return_value=sample_tle_response)
 
     mock_repo = AsyncMock()
     mock_repo.has_fresh_data = AsyncMock(return_value=False)

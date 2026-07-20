@@ -1,6 +1,6 @@
 # SkyRadar: What's on My Head?
 
-Real-time satellite visualizer for **stations, weather, NOAA, GOES, and Earth resource** satellites. Tracks overhead objects using TLE data from [CelesTrak](https://celestrak.org), propagated via [Skyfield](https://github.com/skyfielders/python-skyfield), and streamed to a browser-based Leaflet map at 1Hz over WebSockets.
+Real-time satellite visualizer for the **full active satellite catalog** (15,000+ objects). Tracks overhead objects using TLE data from [CelesTrak](https://celestrak.org), propagated via [Skyfield](https://github.com/skyfielders/python-skyfield), and streamed to a browser-based Leaflet map at 1Hz over WebSockets.
 
 **Data pipeline:** CelesTrak → Redis distributed lock → Background sync worker → PostgreSQL (upsert) + Redis cache → WebSocket stream (1Hz) → Client browser.
 
@@ -205,20 +205,13 @@ docker compose -f docker/docker-compose.frontend.yml up -d
   "type": "positions",
   "satellites": [
     {"name": "ISS (ZARYA)", "latitude": 51.4, "longitude": -120.2, "altitude": 408.0, "azimuth": 180.5, "elevation": 45.2}
-  ],
-  "sources": ["stations", "weather", "noaa", "goes", "resource"]
+  ]
 }
 ```
 
 ## TLE Sync
 
-Five satellite groups are fetched from CelesTrak on a 12-hour cycle:
-
-- `stations` — Space stations (ISS, Tiangong, etc.)
-- `weather` — Weather satellites (NOAA, MetOp, etc.)
-- `noaa` — NOAA-specific satellites
-- `goes` — Geostationary weather satellites
-- `resource` — Earth resource satellites (Landsat, Sentinel, etc.)
+The **full active catalog** (~15,000 satellites) is fetched from CelesTrak as a single bulk query on a 12-hour cycle. The raw response is saved to a local artifact file for fallback if CelesTrak is unreachable.
 
 ## Development
 

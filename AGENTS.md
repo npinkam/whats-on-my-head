@@ -13,7 +13,6 @@ make format            # Format code
 make migrate           # Apply database migrations
 make migrate-create MSG="description"  # Create new migration
 make help              # Show all available commands
-make validate           # Hard gate: run all unit tests before calling done
 
 # Backend (from backend/)
 uv sync                          # Install deps

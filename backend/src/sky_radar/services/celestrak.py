@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Callable
+from pathlib import Path
 from typing import TypeVar
 
 import httpx
@@ -8,6 +9,8 @@ from loguru import logger
 from sky_radar.api.exceptions import TLEFetchError
 
 T = TypeVar("T")
+
+ARTIFACT_PATH = Path("/tmp/celestrak_active.txt")
 
 
 class CelesTrakClient:
@@ -39,9 +42,16 @@ class CelesTrakClient:
             raise RuntimeError("Unexpected: retry loop exited without exception")
         raise last_exception
 
-    async def fetch_tle_group(self, group: str) -> list[tuple[str, str, str]]:
-        url = f"{self.base_url}/NORAD/elements/gp.php?GROUP={group}&FORMAT=tle"
-        logger.info(f"Fetching TLE group: {group}")
+    async def _try_artifact(self) -> str | None:
+        if ARTIFACT_PATH.exists():
+            logger.warning(f"Fetch failed, reading from artifact: {ARTIFACT_PATH}")
+            return ARTIFACT_PATH.read_text()
+        return None
+
+    async def fetch_active_artifact(self) -> list[tuple[str, str, str]]:
+        """Fetch the full active catalog as TLE, saved to a local artifact for fallback."""
+        url = f"{self.base_url}/NORAD/elements/gp.php?GROUP=active&FORMAT=tle"
+        logger.info("Fetching active satellite catalog")
 
         async def _fetch():
             response = await self.client.get(url)
@@ -50,8 +60,24 @@ class CelesTrakClient:
 
         try:
             text = await self._retry_with_backoff(_fetch)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 403 and "not updated" in e.response.text:
+                logger.info("CelesTrak: data hasn't updated since last download")
+                text = await self._try_artifact()
+                if text is None:
+                    return []
+            else:
+                text = await self._try_artifact()
+                if text is None:
+                    raise TLEFetchError("active", str(e)) from e
         except Exception as e:
-            raise TLEFetchError(group, str(e)) from e
+            text = await self._try_artifact()
+            if text is None:
+                raise TLEFetchError("active", str(e)) from e
+        else:
+            ARTIFACT_PATH.parent.mkdir(parents=True, exist_ok=True)
+            ARTIFACT_PATH.write_text(text)
+
         return self._parse_tle(text)
 
     def _parse_tle(self, text: str) -> list[tuple[str, str, str]]:
