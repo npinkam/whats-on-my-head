@@ -1,8 +1,8 @@
 # SkyRadar: What's on My Head?
 
-Real-time satellite visualizer for the **full active satellite catalog** (15,000+ objects). Tracks overhead objects using TLE data from [CelesTrak](https://celestrak.org), propagated via [Skyfield](https://github.com/skyfielders/python-skyfield), and streamed to a browser-based Leaflet map at 1Hz over WebSockets.
+Real-time satellite visualizer for the **full active satellite catalog** (15,000+ objects). Tracks overhead objects using TLE data from [CelesTrak](https://celestrak.org), propagated via [Skyfield](https://github.com/skyfielders/python-skyfield), and streamed to a browser-based Leaflet map over WebSockets.
 
-**Data pipeline:** CelesTrak → Redis distributed lock → Background sync worker → PostgreSQL (upsert) + Redis cache → WebSocket stream (1Hz) → Client browser.
+**Data pipeline:** CelesTrak → Redis distributed lock → Background sync worker → PostgreSQL (upsert) + Redis cache → WebSocket stream (3s interval) → Client browser.
 
 ## Tech Stack
 
@@ -39,7 +39,7 @@ FastAPI TLE Sync Worker
     ├──► RedisCache.cache_tle_data()       → Redis
     └──► SatelliteTracker.update_satellites() → Skyfield cache
 
-Client Browser ◄── 1Hz WebSocket ──► BroadcasterService
+Client Browser ◄── WebSocket (3s interval) ──► BroadcasterService
                                          ├── For each client (lat/lon)
                                          ├── Propagate all EarthSatellite objects
                                          └── Filter to visible (altitude > 0)
@@ -57,6 +57,7 @@ Client Browser ◄── 1Hz WebSocket ──► BroadcasterService
 │   │   │   ├── dependencies.py
 │   │   │   ├── exceptions.py
 │   │   │   ├── health.py            # GET /health, GET /ready
+│   │   │   ├── satellites.py        # GET /api/satellites/search
 │   │   │   └── websocket.py         # WS /ws/{client_id}
 │   │   ├── infrastructure/
 │   │   │   ├── cache.py             # RedisCache (lock + TLE cache)
@@ -68,7 +69,7 @@ Client Browser ◄── 1Hz WebSocket ──► BroadcasterService
 │   │   │   ├── satellite.py         # Pydantic models
 │   │   │   └── websocket.py         # WS message schemas
 │   │   └── services/
-│   │       ├── broadcaster.py       # 1Hz broadcast loop
+│   │       ├── broadcaster.py       # 3s broadcast loop
 │   │       ├── celestrak.py         # CelesTrak HTTP client (retry/backoff)
 │   │       ├── tle_sync.py          # TLE sync orchestration
 │   │       └── tracker.py           # Skyfield orbital propagation
@@ -79,7 +80,8 @@ Client Browser ◄── 1Hz WebSocket ──► BroadcasterService
 ├── frontend/
 │   ├── app.vue                      # Dashboard + map + WebSocket UI
 │   ├── components/
-│   │   └── SatelliteMap.vue         # Leaflet map with satellite markers
+│   │   ├── SatelliteMap.vue         # Leaflet map with satellite markers
+│   │   └── SatelliteSearch.vue      # Satellite name search with dropdown
 │   ├── composables/
 │   │   └── useWebSocket.ts          # WebSocket composable
 │   ├── tests/
@@ -191,7 +193,8 @@ docker compose -f docker/docker-compose.frontend.yml up -d
 |----------|-------------|
 | `GET /health` | Health check |
 | `GET /ready` | Readiness check |
-| `WS /ws/{client_id}` | WebSocket — send lat/lon, receive satellite positions at 1Hz |
+| `GET /api/satellites/search?q={query}` | Search satellites by name (case-insensitive) |
+| `WS /ws/{client_id}` | WebSocket — send lat/lon, receive satellite positions every 3s |
 
 ### WebSocket Protocol
 
@@ -200,7 +203,7 @@ docker compose -f docker/docker-compose.frontend.yml up -d
 {"latitude": 40.7128, "longitude": -74.0060}
 ```
 
-**Server → Client (1Hz):**
+**Server → Client (3s interval):**
 ```json
 {
   "type": "positions",
