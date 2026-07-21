@@ -56,6 +56,7 @@ src/sky_radar/
 ├── api/                 # HTTP/WS routes (thin, delegates to services)
 │   ├── dependencies.py  # FastAPI Depends functions
 │   ├── health.py        # /health, /ready endpoints
+│   ├── satellites.py    # GET /api/satellites/search
 │   └── websocket.py     # WS /ws/{client_id}
 ├── schemas/             # Pydantic request/response models
 ├── repositories/        # Data access layer (class-based)
@@ -70,7 +71,7 @@ src/sky_radar/
 - Pydantic v2 for all request/response schemas and config (`pydantic-settings`).
 - Ruff for both linting and formatting. No Black/isort.
 - Loguru for logging. No stdlib `logging`.
-- WebSocket streams satellite positions at 1Hz to connected clients.
+- WebSocket streams satellite positions to connected clients (default 3s interval).
 - TLE sync runs on a 12-hour background cycle.
 
 ## Environment
