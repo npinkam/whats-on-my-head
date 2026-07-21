@@ -9,7 +9,7 @@
         <p class="text-xs text-slate-400 -mt-0.5">real-time satellite tracker</p>
       </div>
       <div class="ml-4 px-2 py-0.5 bg-slate-800 rounded text-xs text-slate-300">
-        {{ satellites.length }} overhead
+        {{ viewportCount }} overhead
       </div>
       <div
 class="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full"
@@ -22,7 +22,8 @@ class="w-2 h-2 rounded-full"
     </header>
     <main class="flex-1 relative">
       <ClientOnly>
-        <SatelliteMap :satellites="satellites" :center="[mapCenter.lat, mapCenter.lng]" @map-move="onMapMove" />
+        <SatelliteMap ref="mapRef" :satellites="satellites" :center="[mapCenter.lat, mapCenter.lng]" @map-move="onMapMove" @viewport-count="onViewportCount" />
+        <SatelliteSearch @select="onSatelliteSelect" />
       </ClientOnly>
       <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur rounded-lg px-3 py-2 shadow z-[1000]">
         <span class="text-sm font-mono">{{ mapCenter.lat.toFixed(4) }}°, {{ mapCenter.lng.toFixed(4) }}°</span>
@@ -32,13 +33,25 @@ class="w-2 h-2 rounded-full"
 </template>
 
 <script setup lang="ts">
+import type SatelliteMap from '~/components/SatelliteMap.vue'
+
 const { connected, satellites, connect, sendLocation } = useWebSocket()
 
 const mapCenter = ref({ lat: 40.7128, lng: -74.0060 })
+const viewportCount = ref(0)
+const mapRef = ref<InstanceType<typeof SatelliteMap>>()
 
 const onMapMove = (center: { lat: number; lng: number }) => {
   mapCenter.value = center
   sendLocation(center.lat, center.lng)
+}
+
+const onViewportCount = (count: number) => {
+  viewportCount.value = count
+}
+
+const onSatelliteSelect = (satellite: { name: string; norad_cat_id: number }) => {
+  mapRef.value?.flyToSatellite(satellite.name)
 }
 
 onMounted(() => {

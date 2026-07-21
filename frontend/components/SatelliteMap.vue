@@ -23,6 +23,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   mapMove: [center: { lat: number; lng: number }]
+  viewportCount: [count: number]
 }>()
 
 const config = useRuntimeConfig()
@@ -32,6 +33,7 @@ const mapContainer = ref<HTMLDivElement>()
 let map: L.Map | null = null
 let markers: L.LayerGroup | null = null
 const markerMap = new Map<string, L.CircleMarker>()
+const searchAdded = new Set<string>()
 let activeTrail: L.Polyline | null = null
 
 onMounted(() => {
@@ -48,6 +50,7 @@ onMounted(() => {
   map.on('moveend', () => {
     const center = map!.getCenter()
     emit('mapMove', { lat: center.lat, lng: center.lng })
+    emitViewportCount()
   })
 
   map.on('click', () => {
@@ -66,8 +69,9 @@ watch(
 
     const incomingNames = new Set(newSatellites.map(s => s.name))
 
+    // Remove markers that are no longer broadcast — except search-added ones
     for (const [name, marker] of markerMap) {
-      if (!incomingNames.has(name)) {
+      if (!incomingNames.has(name) && !searchAdded.has(name)) {
         markers.removeLayer(marker)
         markerMap.delete(name)
       }
@@ -83,6 +87,8 @@ watch(
         if (existing.isPopupOpen()) {
           existing.setPopupContent(popupContent(sat))
         }
+        // This satellite is now managed by broadcast — remove from search-added
+        searchAdded.delete(sat.name)
       } else {
         const marker = L.circleMarker([sat.latitude, sat.longitude], {
           radius: 6,
@@ -111,9 +117,23 @@ watch(
         markerMap.set(sat.name, marker)
       }
     }
+
+    emitViewportCount()
   },
   { deep: true }
 )
+
+function emitViewportCount() {
+  if (!map || !markers) return
+  const bounds = map.getBounds()
+  let count = 0
+  for (const marker of markerMap.values()) {
+    if (bounds.contains(marker.getLatLng())) {
+      count++
+    }
+  }
+  emit('viewportCount', count)
+}
 
 onUnmounted(() => {
   if (map) {
@@ -147,8 +167,64 @@ async function loadTrajectory(name: string) {
     activeTrail = L.polyline(points, {
       color: '#3b82f6', weight: 2, opacity: 0.7, dashArray: '5, 5'
     }).addTo(map!)
+    return points
   } catch {
-    // ignore fetch errors
+    console.warn(`Failed to load trajectory for ${name}`)
+    return undefined
   }
 }
+
+function flyToSatellite(name: string) {
+  if (!map || !markers) return
+
+  // If satellite is already on the map, fly to its marker
+  const existingMarker = markerMap.get(name)
+  if (existingMarker) {
+    map.flyTo(existingMarker.getLatLng(), 6, { duration: 0.8 })
+    existingMarker.openPopup()
+    loadTrajectory(name)
+    return
+  }
+
+  // Not in broadcast data — fetch trajectory and place a marker at its current position
+  loadTrajectory(name).then((points) => {
+    if (!points || points.length === 0) {
+      console.warn(`No trajectory data for ${name}`)
+      return
+    }
+    const mid = points[Math.floor(points.length / 2)]
+    const latlng: [number, number] = [mid[0], mid[1]]
+
+    const marker = L.circleMarker(latlng, {
+      radius: 6,
+      fillColor: '#3b82f6',
+      color: '#fff',
+      weight: 1,
+      opacity: 1,
+      fillOpacity: 0.8,
+    })
+    marker.bindPopup(
+      `<div class="text-sm"><strong>${name}</strong><br/><span class="text-xs text-slate-400">Position estimated from orbital path</span></div>`,
+      { closeButton: true, autoClose: false, closeOnClick: false }
+    )
+    marker.on('click', async (e) => {
+      L.DomEvent.stopPropagation(e)
+      await loadTrajectory(name)
+    })
+    marker.on('popupclose', () => {
+      if (activeTrail) {
+        map!.removeLayer(activeTrail)
+        activeTrail = null
+      }
+    })
+    markers!.addLayer(marker)
+    markerMap.set(name, marker)
+    searchAdded.add(name)
+
+    map!.flyTo(latlng, 6, { duration: 0.8 })
+    marker.openPopup()
+  })
+}
+
+defineExpose({ flyToSatellite })
 </script>
