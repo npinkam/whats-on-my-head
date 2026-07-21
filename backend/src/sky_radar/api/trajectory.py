@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Query, Request
 
 from sky_radar.api.exceptions import SatelliteNotFoundError
-from sky_radar.repositories.satellite import SatelliteRepository
 from sky_radar.services.tracker import SatelliteTracker
 
 router = APIRouter()
@@ -14,12 +13,9 @@ async def get_trajectory(
     steps: int = Query(default=200, ge=10, le=1000),
 ):
     tracker: SatelliteTracker = request.app.state.tracker
-    repository = SatelliteRepository()
 
-    async with request.app.state.db_session() as session:
-        satellites = await repository.get_all_serialized(session)
-
-    sat_data = next((s for s in satellites if s["name"] == name), None)
+    # O(1) in-memory lookup — no DB query needed
+    sat_data = tracker.get_satellite_data_by_name(name)
     if not sat_data:
         raise SatelliteNotFoundError(name)
 

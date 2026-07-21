@@ -6,6 +6,8 @@ from sky_radar.infrastructure.websocket_manager import ConnectionManager
 from sky_radar.repositories.satellite import SatelliteRepository
 from sky_radar.services.tracker import SatelliteTracker
 
+_BROADCAST_INTERVAL_S = 3.0
+
 
 class BroadcasterService:
     def __init__(
@@ -25,16 +27,24 @@ class BroadcasterService:
                     await asyncio.sleep(1)
                     continue
 
+                sat_objects = self.tracker.get_satellite_objects()
+                if not sat_objects:
+                    await asyncio.sleep(1)
+                    continue
+
                 for websocket in self.manager.active_connections:
                     client_id = self.manager.get_client_id(websocket)
                     lat, lon = self.manager.get_client_location(client_id)
                     if lat == 0.0 and lon == 0.0:
                         continue
 
-                    sat_objects = self.tracker.get_satellite_objects()
-
-                    positions = self.tracker.calculate_positions_batch(
-                        sat_objects, lat, lon, only_visible=True
+                    # Offload CPU-bound propagation to a thread so the
+                    # event loop stays responsive for other connections.
+                    positions = await asyncio.to_thread(
+                        self.tracker.filter_visible_from_subpoints,
+                        sat_objects,
+                        lat,
+                        lon,
                     )
 
                     message = self.tracker.serialize_for_websocket(positions)
@@ -43,4 +53,4 @@ class BroadcasterService:
             except Exception as e:
                 logger.error(f"Broadcast error: {e}")
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(_BROADCAST_INTERVAL_S)
