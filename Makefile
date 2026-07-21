@@ -1,4 +1,4 @@
-.PHONY: help infra infra-down backend frontend dev dev-stop test test-backend test-frontend lint lint-backend lint-frontend typecheck format migrate migrate-create migrate-down clean
+.PHONY: help infra infra-down backend frontend dev dev-stop test test-backend test-frontend lint lint-backend lint-frontend typecheck format migrate migrate-create migrate-down schema-check clean
 
 # ─── Help ────────────────────────────────────────────────────────────────────
 
@@ -73,6 +73,9 @@ migrate-create: ## Create new migration (usage: make migrate-create MSG="descrip
 
 migrate-down: ## Rollback last migration
 	cd backend && uv run alembic downgrade -1
+
+schema-check: ## Verify models are in sync with migrations
+	cd backend && uv run alembic upgrade head && uv run alembic check
 
 # ─── Docker ──────────────────────────────────────────────────────────────────
 

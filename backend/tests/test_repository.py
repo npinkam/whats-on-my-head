@@ -47,6 +47,7 @@ async def test_bulk_upsert_creates_records():
     now = datetime.now(tz=UTC)
     satellites = [
         SatelliteUpsertData(
+            norad_cat_id=25544,
             name="ISS",
             tle_line1="1 25544U 98067A   24001.50000000  .00016717  00000-0  10270-3 0  9993",
             tle_line2="2 25544  51.6416 208.9163 0006703  40.5765 159.9227 15.72125391999999",
